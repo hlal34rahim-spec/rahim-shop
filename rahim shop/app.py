@@ -4,18 +4,17 @@ import os
 
 app = Flask(__name__)
 
-# مفتاح سري لتأمين الجلسات (يمكنك تغييره لأي نص عشوائي)
 app.secret_key = "rahim_super_secret_key_2026"
 
-# معلومات الدخول الخاصة بك (يمكنك تغييرها كما تحب)
 ADMIN_USERNAME = "admin"
-ADMIN_PASSWORD = "rahimpassword123"  # غيّر كلمة المرور هنا لتأمين حسابك
+ADMIN_PASSWORD = "rahimpassword123"
 
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orders.db")
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
+    # أضفنا عميل status لتخزين حالة الطلب بشكل تلقائي (قيد الانتظار)
     c.execute("""
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,7 +23,8 @@ def init_db():
         city TEXT,
         commune TEXT,
         delivery_type TEXT,
-        total_price INTEGER
+        total_price INTEGER,
+        status TEXT DEFAULT 'قيد الانتظار'
     )
     """)
     conn.commit()
@@ -53,8 +53,8 @@ def order():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""
-        INSERT INTO orders (name, phone, city, commune, delivery_type, total_price)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO orders (name, phone, city, commune, delivery_type, total_price, status)
+        VALUES (?, ?, ?, ?, ?, ?, 'قيد الانتظار')
     """, (name, phone, city, commune, delivery_type, total))
     conn.commit()
     conn.close()
@@ -71,7 +71,7 @@ def order():
     whatsapp = f"https://wa.me/213XXXXXXXXX?text={message}"
 
     return f"""
-    <div style="text-align:center; margin-top:50px; font-family:Arial;">
+    <div style="text-align:center; margin-top:50px; font-family:Arial, sans-serif;">
         <h2>✔ تم تسجيل الطلب بنجاح</h2>
         <a href="{whatsapp}" target="_blank" style="padding:10px 20px; background:#25D366; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">📲 إرسال الطلب إلى WhatsApp</a>
         <br><br>
@@ -79,7 +79,6 @@ def order():
     </div>
     """
 
-# صفحة تسجيل الدخول
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -95,16 +94,14 @@ def login():
             
     return render_template("login.html", error=error)
 
-# صفحة تسجيل الخروج
 @app.route("/logout")
 def logout():
     session.pop("logged_in", None)
     return redirect(url_for("login"))
 
-# صفحة الآدمين المحمية
+# صفحة الآدمين الاحترافية المحمية
 @app.route("/admin")
 def admin():
-    # التحقق إذا كان الآدمين مسجل دخوله فعلاً
     if not session.get("logged_in"):
         return redirect(url_for("login"))
         
@@ -112,8 +109,41 @@ def admin():
     c = conn.cursor()
     c.execute("SELECT * FROM orders ORDER BY id DESC")
     orders = c.fetchall()
+    
+    # حساب إجمالي الأرباح للطلبات التي تم توصيلها فقط (أو كل الطلبات حسب رغبتك)
+    # هنا سنحسب إجمالي مبالغ الطلبات الكلية كإحصائية سريعة
+    c.execute("SELECT SUM(total_price) FROM orders WHERE status = 'تم التوصيل'")
+    total_revenue = c.fetchone()[0] or 0
+    
     conn.close()
-    return render_template("admin.html", orders=orders)
+    return render_template("admin.html", orders=orders, total_revenue=total_revenue)
+
+# مسار تحديث حالة الطلب
+@app.route("/update_status/<int:order_id>", methods=["POST"])
+def update_status(order_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+    
+    new_status = request.form["status"]
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("UPDATE orders SET status = ? WHERE id = ?", (new_status, order_id))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("admin"))
+
+# مسار حذف الطلب
+@app.route("/delete_order/<int:order_id>", methods=["POST"])
+def delete_order(order_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+        
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("admin"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
