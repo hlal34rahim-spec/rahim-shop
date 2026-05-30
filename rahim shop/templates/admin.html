@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لوحة الإدارة</title>
+
+<style>
+body{font-family:Arial;background:#f4f4f4;}
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+}
+th,td{
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+h2{text-align:center;}
+</style>
+
+</head>
+
+<body>
+
+<h2>📦 الطلبات</h2>
+
+<table>
+<tr>
+<th>ID</th>
+<th>الاسم</th>
+<th>الهاتف</th>
+<th>الولاية</th>
+<th>البلدية</th>
+<th>التوصيل</th>
+<th>المبلغ</th>
+</tr>
+
+{% for o in orders %}
+<tr>
+<td>{{o[0]}}</td>
+<td>{{o[1]}}</td>
+<td>{{o[2]}}</td>
+<td>{{o[3]}}</td>
+<td>{{o[4]}}</td>
+<td>{{o[5]}}</td>
+<td>{{o[6]}}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

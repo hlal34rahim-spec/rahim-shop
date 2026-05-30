@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>متجر</title>
+
+<style>
+body{
+    font-family: Arial;
+    background: linear-gradient(120deg,#f2f2f2,#e6f7ff);
+}
+
+.container{
+    max-width:450px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    margin-top:20px;
+    border-radius:15px;
+    box-shadow:0 5px 20px rgba(0,0,0,0.1);
+}
+
+img{
+    width:100%;
+    border-radius:12px;
+}
+
+h2{text-align:center;}
+.price{text-align:center;color:red;font-size:22px;}
+
+input,select,button{
+    width:100%;
+    padding:10px;
+    margin-top:10px;
+    border-radius:10px;
+    border:1px solid #ddd;
+}
+
+button{
+    background:#28a745;
+    color:white;
+    font-size:18px;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1e7e34;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="/static/product.jpg" alt="product">
+
+<h2>🛒 {{product}}</h2>
+<p class="price">السعر: {{price}} دج</p>
+
+<form action="/order" method="POST">
+
+<input name="name" placeholder="الاسم الكامل" required>
+<input name="phone" placeholder="رقم الهاتف" required>
+
+<select name="city" required>
+<option>اختر الولاية</option>
+<option>الجزائر</option>
+<option>وهران</option>
+<option>سطيف</option>
+<option>قسنطينة</option>
+</select>
+
+<input name="commune" placeholder="البلدية" required>
+
+<select name="delivery_type" required>
+<option value="home">🏠 توصيل للمنزل (500 دج)</option>
+<option value="office">🏬 مكتب التوصيل (300 دج)</option>
+</select>
+
+<button type="submit">🛒 تأكيد الطلب</button>
+
+</form>
+
+</div>
+
+</body>
+</html>
