@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import os
 
@@ -14,7 +14,6 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "orders.db")
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    # أضفنا عميل status لتخزين حالة الطلب بشكل تلقائي (قيد الانتظار)
     c.execute("""
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,7 +98,6 @@ def logout():
     session.pop("logged_in", None)
     return redirect(url_for("login"))
 
-# صفحة الآدمين الاحترافية المحمية
 @app.route("/admin")
 def admin():
     if not session.get("logged_in"):
@@ -110,15 +108,24 @@ def admin():
     c.execute("SELECT * FROM orders ORDER BY id DESC")
     orders = c.fetchall()
     
-    # حساب إجمالي الأرباح للطلبات التي تم توصيلها فقط (أو كل الطلبات حسب رغبتك)
-    # هنا سنحسب إجمالي مبالغ الطلبات الكلية كإحصائية سريعة
     c.execute("SELECT SUM(total_price) FROM orders WHERE status = 'تم التوصيل'")
     total_revenue = c.fetchone()[0] or 0
     
     conn.close()
     return render_template("admin.html", orders=orders, total_revenue=total_revenue)
 
-# مسار تحديث حالة الطلب
+# مسار خاص للتحقق التلقائي من عدد الطلبات (يستخدمه الجافاسكريبت في الخلفية)
+@app.route("/check_orders_count")
+def check_orders_count():
+    if not session.get("logged_in"):
+        return jsonify({"count": 0})
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) FROM orders")
+    count = c.fetchone()[0]
+    conn.close()
+    return jsonify({"count": count})
+
 @app.route("/update_status/<int:order_id>", methods=["POST"])
 def update_status(order_id):
     if not session.get("logged_in"):
@@ -132,7 +139,6 @@ def update_status(order_id):
     conn.close()
     return redirect(url_for("admin"))
 
-# مسار حذف الطلب
 @app.route("/delete_order/<int:order_id>", methods=["POST"])
 def delete_order(order_id):
     if not session.get("logged_in"):
