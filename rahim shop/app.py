@@ -58,25 +58,20 @@ def order():
     conn.commit()
     conn.close()
 
+    # تحضير رسالة الواتساب الاحترافية
     message = f"""
 🛒 طلب جديد
 الاسم: {name}
 الهاتف: {phone}
 الولاية: {city}
 البلدية: {commune}
-التوصيل: {delivery_type}
-المبلغ: {total} دج
+التوصيل: {'للمنزل 🏠' if delivery_type == 'home' else 'المكتب 🏬'}
+المبلغ الإجمالي: {total} دج
 """
-    whatsapp = f"https://wa.me/213XXXXXXXXX?text={message}"
+    whatsapp_url = f"https://wa.me/213XXXXXXXXX?text={message.strip()}"
 
-    return f"""
-    <div style="text-align:center; margin-top:50px; font-family:Arial, sans-serif;">
-        <h2>✔ تم تسجيل الطلب بنجاح</h2>
-        <a href="{whatsapp}" target="_blank" style="padding:10px 20px; background:#25D366; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">📲 إرسال الطلب إلى WhatsApp</a>
-        <br><br>
-        <a href="/">رجوع للمتجر</a>
-    </div>
-    """
+    # هنا التوجيه الجديد لصفحة الشكر الاحترافية مع تمرير البيانات
+    return render_template("thankyou.html", name=name, total=total, whatsapp_url=whatsapp_url)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -125,7 +120,6 @@ def check_orders_count():
     conn.close()
     return jsonify({"count": count})
 
-# مسار توليد التيكي للطباعة
 @app.route("/print_ticket/<int:order_id>")
 def print_ticket(order_id):
     if not session.get("logged_in"):
