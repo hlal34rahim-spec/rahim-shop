@@ -37,7 +37,6 @@
             font-weight: 600;
             font-size: 14px;
         }
-        /* بطاقة الأرباح */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -54,7 +53,6 @@
         .stat-card h3 { margin: 0; font-size: 14px; color: #64748b; }
         .stat-card p { margin: 10px 0 0 0; font-size: 24px; font-weight: 700; color: #16a34a; }
 
-        /* الجدول */
         .table-container {
             background: white;
             border-radius: 12px;
@@ -78,7 +76,6 @@
         }
         tr:hover { background-color: #f8fafc; }
         
-        /* القوائم والأزرار */
         select {
             padding: 6px 10px;
             font-family: 'Cairo', sans-serif;
@@ -110,6 +107,8 @@
     </style>
 </head>
 <body>
+
+<audio id="cashSound" src="{{ url_for('static', filename='cash.mp3') }}" preload="auto"></audio>
 
 <div class="container">
     <div class="navbar">
@@ -161,7 +160,7 @@
                         </span>
                     </td>
                     <td>
-                        <form action="/update_status//{{ o[0] }}" method="POST" class="inline-form">
+                        <form action="/update_status/{{ o[0] }}" method="POST" class="inline-form">
                             <select name="status">
                                 <option value="قيد الانتظار" {% if o[7] == 'قيد الانتظار' %}selected{% endif %}>⏳ معلق</option>
                                 <option value="تم التوصيل" {% if o[7] == 'تم التوصيل' %}selected{% endif %}>✅ تم الاستلام</option>
@@ -181,6 +180,33 @@
         </table>
     </div>
 </div>
+
+<script>
+    // تخزين عدد الطلبات الحالي عند فتح الصفحة
+    let currentOrdersCount = {{ orders|length }};
+    const sound = document.getElementById('cashSound');
+
+    // دالة تفحص عدد الطلبات كل 10 ثوانٍ
+    function checkNewOrders() {
+        fetch('/check_orders_count')
+            .then(response => response.json())
+            .then(data => {
+                if (data.count > currentOrdersCount) {
+                    // إذا زاد العدد، نقوم بتشغيل جرس الرنين
+                    sound.play().catch(e => console.log("يرجى التفاعل مع الصفحة أولاً لتفعيل الصوت"));
+                    
+                    // تحديث العدد الحالي وتحديث الصفحة لرؤية الطلب الجديد
+                    currentOrdersCount = data.count;
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                }
+            });
+    }
+
+    // تشغيل الفحص التلقائي كل 10 ثوانٍ
+    setInterval(checkNewOrders, 10000);
+</script>
 
 </body>
 </html>
