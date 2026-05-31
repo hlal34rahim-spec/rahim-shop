@@ -114,7 +114,6 @@ def admin():
     conn.close()
     return render_template("admin.html", orders=orders, total_revenue=total_revenue)
 
-# مسار خاص للتحقق التلقائي من عدد الطلبات (يستخدمه الجافاسكريبت في الخلفية)
 @app.route("/check_orders_count")
 def check_orders_count():
     if not session.get("logged_in"):
@@ -125,6 +124,22 @@ def check_orders_count():
     count = c.fetchone()[0]
     conn.close()
     return jsonify({"count": count})
+
+# مسار توليد التيكي للطباعة
+@app.route("/print_ticket/<int:order_id>")
+def print_ticket(order_id):
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+        
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute("SELECT * FROM orders WHERE id = ?", (order_id,))
+    order_data = c.fetchone()
+    conn.close()
+    
+    if order_data:
+        return render_template("ticket.html", order=order_data, product=PRODUCT_NAME)
+    return "الطلب غير موجود!"
 
 @app.route("/update_status/<int:order_id>", methods=["POST"])
 def update_status(order_id):
